@@ -9,6 +9,8 @@ jobs:
   build-and-push:
     name: Build and push
     runs-on: ubuntu-latest
+    env:
+      APP_NAME: ${{ github.event.repository.name }}
 
     permissions:
       id-token: write
@@ -40,16 +42,16 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           push: true
-          tags: europe-north1-docker.pkg.dev/${{ vars.PROJECT_ID }}/docker/hello-pubsub:latest
+          tags: europe-north1-docker.pkg.dev/${{ vars.PROJECT_ID }}/docker/${{ env.APP_NAME }}:latest
 
       - id: deploy
         name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v1
         with:
-          service: hello-pubsub
+          service: ${{ env.APP_NAME }}
           region: europe-north1
-          image: europe-north1-docker.pkg.dev/${{ vars.PROJECT_ID }}/docker/hello-pubsub:latest
-          flags: --service-account=hello-default-sa@cloud-core-376009.iam.gserviceaccount.com
+          image: europe-north1-docker.pkg.dev/${{ vars.PROJECT_ID }}/docker/${{ env.APP_NAME }}:latest
+          flags: --service-account=hello-default-sa@${{ vars.PROJECT_ID }}.iam.gserviceaccount.com
 
       - name: Show Output
         run: echo ${{ steps.deploy.outputs.url }}

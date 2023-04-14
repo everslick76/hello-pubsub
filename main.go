@@ -11,7 +11,7 @@ import (
 func main() {
 	router := gin.Default()
 	router.GET("/publish/:msg", publish)
-	router.Run("localhost:8080")
+	router.Run("localhost:8081")
 }
 
 func publish(c *gin.Context) {
