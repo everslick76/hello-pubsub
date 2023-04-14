@@ -3,15 +3,23 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	os.Setenv("PORT", "8081")
+
 	router := gin.Default()
+
 	router.GET("/publish/:msg", publish)
-	router.Run("localhost:8081")
+	
+	err := router.Run(":8081")
+	if err != nil {
+		panic("[Error] failed to start Gin server due to: " + err.Error())
+	}
 }
 
 func publish(c *gin.Context) {
