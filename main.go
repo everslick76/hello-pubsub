@@ -3,14 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	os.Setenv("PORT", "8081")
 
 	router := gin.Default()
 
@@ -30,7 +28,7 @@ func publish(c *gin.Context) {
 
 	agent := NewAgent()
 
-	go agent.Publish("projects/cloud-core-376009/topics/hello", msg)
+	go agent.Publish("hello", msg)
 
 	agent.Close()
 
@@ -38,6 +36,7 @@ func publish(c *gin.Context) {
 }
 
 type Agent struct {
+
 	mu    sync.Mutex
 	subs  map[string][]chan string
 	quit  chan struct{}
@@ -45,6 +44,7 @@ type Agent struct {
 }
 
 func NewAgent() *Agent {
+
 	return &Agent{
 		subs: make(map[string][]chan string),
 		quit: make(chan struct{}),
@@ -52,6 +52,7 @@ func NewAgent() *Agent {
 }
 
 func (b *Agent) Publish(topic string, msg string) {
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -65,6 +66,7 @@ func (b *Agent) Publish(topic string, msg string) {
 }
 
 func (b *Agent) Subscribe(topic string) <-chan string {
+
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -78,6 +80,7 @@ func (b *Agent) Subscribe(topic string) <-chan string {
 }
 
 func (b *Agent) Close() {
+	
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
