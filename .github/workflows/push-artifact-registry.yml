@@ -52,7 +52,6 @@ jobs:
           region: europe-north1
           image: europe-north1-docker.pkg.dev/${{ vars.PROJECT_ID }}/docker/${{ env.APP_NAME }}:latest
           flags: --service-account=hello-default-sa@${{ vars.PROJECT_ID }}.iam.gserviceaccount.com
-          env_vars: PORT=8081
 
       - name: Show Output
         run: echo ${{ steps.deploy.outputs.url }}
