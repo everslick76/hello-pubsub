@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -19,6 +20,7 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/", hello)
+	router.GET("/publish/:msg", publish)
 	
 	err := router.Run(":8081")
 	if err != nil {
@@ -46,4 +48,23 @@ func main() {
 
 func hello(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, "Hello from hello-pubsub!")
+}
+
+func publish(c *gin.Context) {
+
+	ctx := context.Background()
+	msg := c.Param("msg")
+
+	pubsubMsg := &pubsub.Message{
+		Data: []byte(c.Param("msg")),
+	}
+
+	if _, err := topic.Publish(ctx, pubsubMsg).Get(ctx); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, msg)
+		return
+	}
+
+	fmt.Println("Published " + msg)
+
+	c.IndentedJSON(http.StatusOK, msg)
 }
