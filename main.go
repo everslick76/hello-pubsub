@@ -1,99 +1,49 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"log"
 	"net/http"
-	"sync"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	topic *pubsub.Topic
 )
 
 func main() {
 
+	// rest
 	router := gin.Default()
 
-	router.GET("/publish/:msg", publish)
+	router.GET("/", hello)
 	
 	err := router.Run(":8081")
 	if err != nil {
 		panic("[Error] failed to start Gin server due to: " + err.Error())
 	}
-}
 
-func publish(c *gin.Context) {
+	//pubsub
+	ctx := context.Background()
 
-	msg := c.Param("msg")
+	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
 
-	fmt.Println("Publishing: " + msg)
+	topicName := "projects/cloud-core-376009/topics/hello"
+	topic = client.Topic(topicName)
 
-	agent := NewAgent()
-
-	go agent.Publish("hello", msg)
-
-	agent.Close()
-
-	c.IndentedJSON(http.StatusOK, msg)
-}
-
-type Agent struct {
-
-	mu    sync.Mutex
-	subs  map[string][]chan string
-	quit  chan struct{}
-	closed bool
-}
-
-func NewAgent() *Agent {
-
-	return &Agent{
-		subs: make(map[string][]chan string),
-		quit: make(chan struct{}),
+	// Create the topic if it doesn't exist.
+	exists, err := topic.Exists(ctx)
+	if err != nil || !exists {
+		log.Fatal(err)
 	}
 }
 
-func (b *Agent) Publish(topic string, msg string) {
-
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.closed {
-		return
-	}
-
-	for _, ch := range b.subs[topic] {
-		ch <- msg
-	}
-}
-
-func (b *Agent) Subscribe(topic string) <-chan string {
-
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.closed {
-		return nil
-	}
-
-	ch := make(chan string)
-	b.subs[topic] = append(b.subs[topic], ch)
-	return ch
-}
-
-func (b *Agent) Close() {
-	
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	if b.closed {
-		return
-	}
-
-	b.closed = true
-	close(b.quit)
-
-	for _, ch := range b.subs {
-		for _, sub := range ch {
-			close(sub)
-		}
-	}
+func hello(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, "Hello from hello-pubsub!")
 }
