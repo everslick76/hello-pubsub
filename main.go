@@ -52,11 +52,14 @@ func hello(c *gin.Context) {
 
 func publish(c *gin.Context) {
 
-	ctx := context.Background()
 	msg := c.Param("msg")
 
+	fmt.Println("Publishing " + msg)
+
+	ctx := context.Background()
+
 	pubsubMsg := &pubsub.Message{
-		Data: []byte(c.Param("msg")),
+		Data: []byte(msg),
 	}
 
 	if _, err := topic.Publish(ctx, pubsubMsg).Get(ctx); err != nil {
