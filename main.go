@@ -34,8 +34,10 @@ func main() {
 	}
 	defer client.Close()
 
-	topicName := "projects/cloud-core-376009/topics/hello"
+	topicName := "hello"
 	topic = client.Topic(topicName)
+
+	log.Printf("Topic is %s", topic.String())
 
 	// Create the topic if it doesn't exist.
 	exists, err := topic.Exists(ctx)
