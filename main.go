@@ -137,7 +137,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -178,8 +177,6 @@ func main() {
 	exists, err := topic.Exists(ctx)
 	if err != nil || !exists {
 		log.Fatal(err)
-	} else {
-		fmt.Println("Topic exists: " + topic.String())
 	}
 }
 
@@ -191,25 +188,18 @@ func publish(c *gin.Context) {
 
 	msg := c.Param("msg")
 
-	fmt.Println("Publishing " + msg)
-
-	ctx := context.Background()
+	log.Printf("Publishing %s", msg)
 
 	pubsubMsg := &pubsub.Message{
 		Data: []byte(msg),
 	}
 
-	if ctx == nil {
-		fmt.Println("context is nil")
-		c.IndentedJSON(http.StatusBadRequest, msg)
-	} else {
-		if _, err := topic.Publish(ctx, pubsubMsg).Get(ctx); err != nil {
-			c.IndentedJSON(http.StatusInternalServerError, msg)
-			return
-		}
-	
-		fmt.Println("Published " + msg)
-	
-		c.IndentedJSON(http.StatusOK, msg)
+	if _, err := topic.Publish(c, pubsubMsg).Get(c); err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, msg)
+		return
 	}
+
+	log.Printf("Published %s", msg)
+
+	c.IndentedJSON(http.StatusOK, msg)
 }
