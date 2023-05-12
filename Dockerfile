@@ -1,6 +1,6 @@
 FROM golang:1.20-alpine
 
-EXPOSE 8080
+EXPOSE 8081
 
 WORKDIR /app
 
