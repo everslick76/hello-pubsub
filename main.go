@@ -39,10 +39,12 @@ func main() {
 	topicName := "projects/cloud-core-376009/topics/hello"
 	topic = client.Topic(topicName)
 
-	// Create the topic if it doesn't exist.
+	// check if the topic exists
 	exists, err := topic.Exists(ctx)
 	if err != nil || !exists {
 		log.Fatal(err)
+	} else {
+		fmt.Println("Topic exists: " + topic.String())
 	}
 }
 
@@ -62,12 +64,17 @@ func publish(c *gin.Context) {
 		Data: []byte(msg),
 	}
 
-	if _, err := topic.Publish(ctx, pubsubMsg).Get(ctx); err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, msg)
-		return
+	if ctx == nil {
+		fmt.Println("context is nil")
+		c.IndentedJSON(http.StatusBadRequest, msg)
+	} else {
+		if _, err := topic.Publish(ctx, pubsubMsg).Get(ctx); err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, msg)
+			return
+		}
+	
+		fmt.Println("Published " + msg)
+	
+		c.IndentedJSON(http.StatusOK, msg)
 	}
-
-	fmt.Println("Published " + msg)
-
-	c.IndentedJSON(http.StatusOK, msg)
 }
