@@ -40,6 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	http.HandleFunc("/", hello)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/push", pushHandler)
 
@@ -55,6 +56,11 @@ type pushRequest struct {
 		ID         string `json:"message_id"`
 	}
 	Subscription string
+}
+
+func hello(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Fprintf(w, "Hello from hello-pubsub!")
 }
 
 func pushHandler(w http.ResponseWriter, r *http.Request) {
