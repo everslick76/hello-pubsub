@@ -60,6 +60,8 @@ type pushRequest struct {
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
+	log.Println("Call to hello received")
+
 	fmt.Fprintf(w, "Hello from hello-pubsub!")
 }
 
