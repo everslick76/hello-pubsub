@@ -48,15 +48,6 @@ func main() {
 	}
 }
 
-type pushRequest struct {
-	Message struct {
-		Attributes map[string]string
-		Data       []byte
-		ID         string `json:"message_id"`
-	}
-	Subscription string
-}
-
 // func getPushRequest(w http.ResponseWriter, r *http.Request) {
 
 // 	w.Header().Set("Content-Type", "application/json")
@@ -96,7 +87,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	
-		fmt.Fprint(w, "Message published: " + string(msg.Message.Data))
+		fmt.Fprint(w, "Message published: " + string(msg.Data))
 	}
 }
 
