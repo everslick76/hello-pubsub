@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -18,7 +19,8 @@ var (
 
 func main() {
 
-	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
+	// log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	ctx := context.Background()
 
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", hello)
-	// http.HandleFunc("/request", getPushRequest)
+	http.HandleFunc("/request", getPushRequest)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
@@ -47,20 +49,16 @@ func main() {
 	}
 }
 
-// type pushRequest struct {
-// 	Now string `json:"now"`
-// }
+func getPushRequest(w http.ResponseWriter, r *http.Request) {
 
-// func getPushRequest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	w.Header().Set("Content-Type", "application/json")
+	msg := &pubsub.Message{
+		Data: []byte(time.Now().String()),
+	}
 
-// 	s := pushRequest{
-// 		Now: time.Now().String(), 
-// 	}
-
-// 	json.NewEncoder(w).Encode(s)
-// }
+	json.NewEncoder(w).Encode(msg)
+}
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
@@ -90,7 +88,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	
-		fmt.Fprint(w, "Message published: "+ currentTime)
+		fmt.Fprint(w, "Message published: " + currentTime)
 	}
 }
 
