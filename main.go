@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", hello)
-	// http.HandleFunc("/request", getPushRequest)
+	http.HandleFunc("/request", getPubsubMessage)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
@@ -48,16 +49,16 @@ func main() {
 	}
 }
 
-// func getPushRequest(w http.ResponseWriter, r *http.Request) {
+func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
 
-// 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
-// 	msg := &pubsub.Message{
-// 		Data: []byte(time.Now().String()),
-// 	}
+	msg := &pubsub.Message{
+		Data: []byte(time.Now().String()),
+	}
 
-// 	json.NewEncoder(w).Encode(msg)
-// }
+	json.NewEncoder(w).Encode(msg)
+}
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
