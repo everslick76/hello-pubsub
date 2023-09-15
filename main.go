@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -15,53 +14,53 @@ import (
 
 var (
 	topic *pubsub.Topic
-
-	// Messages received by this instance.
-	messagesMu sync.Mutex
-	messages   []string
 )
-
-const maxMessages = 10
 
 func main() {
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
-	// ctx := context.Background()
+	ctx := context.Background()
 
-	// client, err := pubsub.NewClient(ctx, "cloud-core-376009")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer client.Close()
+	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
 
-	// topic = client.Topic("hello")
+	topic = client.Topic("hello")
 
-	// // check if the topic exists
-	// exists, err := topic.Exists(ctx)
-	// if err != nil || !exists {
-	// 	log.Fatal(err)
-	// }
+	// check if the topic exists
+	exists, err := topic.Exists(ctx)
+	if err != nil || !exists {
+		log.Fatal(err)
+	}
 
 	http.HandleFunc("/", hello)
+	// http.HandleFunc("/request", getPushRequest)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
-	http.HandleFunc("/push", pushHandler)
 
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal(err)
 	}
 }
 
-type pushRequest struct {
-	Message struct {
-		Attributes map[string]string
-		Data       []byte
-		ID         string `json:"message_id"`
-	}
-	Subscription string
-}
+// type pushRequest struct {
+// 	Now string `json:"now"`
+// }
+
+// func getPushRequest(w http.ResponseWriter, r *http.Request) {
+
+// 	w.Header().Set("Content-Type", "application/json")
+
+// 	s := pushRequest{
+// 		Now: time.Now().String(), 
+// 	}
+
+// 	json.NewEncoder(w).Encode(s)
+// }
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
@@ -70,39 +69,29 @@ func hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello from hello-pubsub!")
 }
 
-func pushHandler(w http.ResponseWriter, r *http.Request) {
-
-	msg := &pushRequest{}
-	if err := json.NewDecoder(r.Body).Decode(msg); err != nil {
-		http.Error(w, fmt.Sprintf("Could not decode body: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	messagesMu.Lock()
-	defer messagesMu.Unlock()
-	// Limit to ten.
-	messages = append(messages, string(msg.Message.Data))
-	if len(messages) > maxMessages {
-		messages = messages[len(messages)-maxMessages:]
-	}
-}
-
 func publishHandler(w http.ResponseWriter, r *http.Request) {
+
+	n := 1
+	requests := r.URL.Query().Get("requests")
+	fmt.Sscan(requests, &n)
 
 	ctx := context.Background()
 
-	currentTime := time.Now().String()
+	for i := 1; i <= n; i++ {
 
-	msg := &pubsub.Message{
-		Data: []byte(currentTime),
+		currentTime := time.Now().String()
+
+		msg := &pubsub.Message{
+			Data: []byte(currentTime),
+		}
+	
+		if _, err := topic.Publish(ctx, msg).Get(ctx); err != nil {
+			http.Error(w, fmt.Sprintf("Could not publish message: %v", err), http.StatusBadRequest)
+			return
+		}
+	
+		fmt.Fprint(w, "Message published: "+ currentTime)
 	}
-
-	if _, err := topic.Publish(ctx, msg).Get(ctx); err != nil {
-		http.Error(w, fmt.Sprintf("Could not publish message: %v", err), http.StatusBadRequest)
-		return
-	}
-
-	fmt.Fprint(w, "Message published: "+ currentTime)
 }
 
  // testing goroutines, channels and wait groups options
@@ -111,13 +100,9 @@ func concurrency1(w http.ResponseWriter, r *http.Request) {
 
 	// one goroutine per request
 
-	var n int
-
+	n := 1
 	requests := r.URL.Query().Get("requests")
-	if _, err := fmt.Sscan(requests, &n); err != nil {
-		http.Error(w, fmt.Sprintf("Could not extract number of requests: %v", err), 500)
-		return
-	}
+	fmt.Sscan(requests, &n)
 
 	ch := make(chan string)
 
