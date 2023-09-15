@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -39,7 +38,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", hello)
-	http.HandleFunc("/request", getPushRequest)
+	// http.HandleFunc("/request", getPushRequest)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
@@ -49,16 +48,25 @@ func main() {
 	}
 }
 
-func getPushRequest(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
-
-	msg := &pubsub.Message{
-		Data: []byte(time.Now().String()),
+type pushRequest struct {
+	Message struct {
+		Attributes map[string]string
+		Data       []byte
+		ID         string `json:"message_id"`
 	}
-
-	json.NewEncoder(w).Encode(msg)
+	Subscription string
 }
+
+// func getPushRequest(w http.ResponseWriter, r *http.Request) {
+
+// 	w.Header().Set("Content-Type", "application/json")
+
+// 	msg := &pubsub.Message{
+// 		Data: []byte(time.Now().String()),
+// 	}
+
+// 	json.NewEncoder(w).Encode(msg)
+// }
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
@@ -88,7 +96,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	
-		fmt.Fprint(w, "Message published: " + currentTime)
+		fmt.Fprint(w, "Message published: " + string(msg.Message.Data))
 	}
 }
 
