@@ -62,8 +62,6 @@ func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
-	log.Println("Call to hello received")
-
 	fmt.Fprintf(w, "Hello from hello-pubsub!")
 }
 
@@ -88,8 +86,12 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	
-		fmt.Fprint(w, "Message published: " + string(msg.Data))
+		log.Printf("Message published: " + string(msg.Data))
 	}
+
+	log.Printf("%s Message(s) published", requests)
+
+	fmt.Fprint(w, "Message(s) published: " + requests)
 }
 
  // testing goroutines, channels and wait groups options
