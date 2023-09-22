@@ -21,7 +21,23 @@ func main() {
 
 	setupLogging()
 
-	setupPubSub()
+	ctx := context.Background()
+
+	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
+	topic = client.Topic("hello")
+
+	// check if the topic exists
+	exists, err := topic.Exists(ctx)
+	if err != nil || !exists {
+		log.Fatal(err)
+	}
+
+	// setupPubSub()
 
 	setupRest()
 
