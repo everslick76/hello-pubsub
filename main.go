@@ -14,6 +14,8 @@ import (
 )
 
 var (
+	ctx context.Context
+	client *pubsub.Client
 	topic *pubsub.Topic
 )
 
@@ -21,23 +23,7 @@ func main() {
 
 	setupLogging()
 
-	ctx := context.Background()
-
-	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer client.Close()
-
-	topic = client.Topic("hello")
-
-	// check if the topic exists
-	exists, err := topic.Exists(ctx)
-	if err != nil || !exists {
-		log.Fatal(err)
-	}
-
-	// setupPubSub()
+	setupPubSub()
 
 	setupRest()
 
@@ -54,7 +40,7 @@ func setupLogging() {
 
 func setupPubSub() {
 
-	ctx := context.Background()
+	ctx = context.Background()
 
 	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
 	if err != nil {
@@ -119,8 +105,6 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 	
 		log.Printf("Message published: " + string(msg.Data))
 	}
-
-	log.Printf("%s Message(s) published", requests)
 
 	fmt.Fprint(w, "Message(s) published: " + requests)
 }
