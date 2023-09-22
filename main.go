@@ -14,8 +14,6 @@ import (
 )
 
 var (
-	ctx context.Context
-	client pubsub.Client
 	topic *pubsub.Topic
 )
 
@@ -23,24 +21,10 @@ func main() {
 
 	setupLogging()
 
-	setupPubSub(ctx, &client)
-
 	setupRest()
 
-	// open up for business
-	if err := http.ListenAndServe(":8081", nil); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func setupLogging() {
-
-	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-}
-
-func setupPubSub(ctx context.Context, client *pubsub.Client) {
-
-	ctx = context.Background()
+	// setup pubsub
+	ctx := context.Background()
 
 	client, err := pubsub.NewClient(ctx, "cloud-core-376009")
 	if err != nil {
@@ -55,6 +39,16 @@ func setupPubSub(ctx context.Context, client *pubsub.Client) {
 	if err != nil || !exists {
 		log.Fatal(err)
 	}
+
+	// open up for business
+	if err := http.ListenAndServe(":8081", nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func setupLogging() {
+
+	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 }
 
 func setupRest() {
