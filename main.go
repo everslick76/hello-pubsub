@@ -15,7 +15,7 @@ import (
 
 var (
 	ctx context.Context
-	client *pubsub.Client
+	client pubsub.Client
 	topic *pubsub.Topic
 )
 
@@ -23,7 +23,7 @@ func main() {
 
 	setupLogging()
 
-	setupPubSub()
+	setupPubSub(ctx, &client)
 
 	setupRest()
 
@@ -38,7 +38,7 @@ func setupLogging() {
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 }
 
-func setupPubSub() {
+func setupPubSub(ctx context.Context, client *pubsub.Client) {
 
 	ctx = context.Background()
 
