@@ -54,26 +54,36 @@ func setupLogging() {
 func setupRest() {
 
 	http.HandleFunc("/", hello)
-	http.HandleFunc("/request", getPubsubMessage)
 	http.HandleFunc("/publish", publishHandler)
+	http.HandleFunc("/push", pushHandler)
+	http.HandleFunc("/request", getPubsubMessage)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
-}
-
-func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
-
-	msg := &pubsub.Message{
-		Data: []byte(time.Now().String()),
-	}
-
-	json.NewEncoder(w).Encode(msg)
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "Hello from hello-pubsub!")
+}
+
+type pushRequest struct {
+	Message struct {
+		Attributes map[string]string
+		Data       []byte
+		ID         string `json:"message_id"`
+	}
+	Subscription string
+}
+
+func pushHandler(w http.ResponseWriter, r *http.Request) {
+
+	msg := &pushRequest{}
+	if err := json.NewDecoder(r.Body).Decode(msg); err != nil {
+		http.Error(w, fmt.Sprintf("Could not decode body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("Message received: %s", string(msg.Message.Data))
 }
 
 func publishHandler(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +111,18 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, "Message(s) published: " + requests)
+}
+
+
+func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	msg := &pubsub.Message{
+		Data: []byte(time.Now().String()),
+	}
+
+	json.NewEncoder(w).Encode(msg)
 }
 
  // testing goroutines, channels and wait groups options
@@ -185,7 +207,7 @@ func randomDuration(min int, max int) time.Duration {
 func print(ch <-chan string, wg *sync.WaitGroup) {
 
 	for {
-		n, open :=  <-ch
+		n, open := <-ch
 		if !open {
 			break
 		}
