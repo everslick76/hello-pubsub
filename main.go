@@ -19,8 +19,24 @@ var (
 
 func main() {
 
+	setupLogging()
+
+	setupPubSub()
+
+	setupRest()
+
+	// open up for business
+	if err := http.ListenAndServe(":8081", nil); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func setupLogging() {
+
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-	// log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+}
+
+func setupPubSub() {
 
 	ctx := context.Background()
 
@@ -37,16 +53,15 @@ func main() {
 	if err != nil || !exists {
 		log.Fatal(err)
 	}
+}
+
+func setupRest() {
 
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/request", getPubsubMessage)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
-
-	if err := http.ListenAndServe(":8081", nil); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
