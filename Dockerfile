@@ -1,5 +1,7 @@
 FROM golang:1.20-alpine
 
+ENV GO111MODULE=on
+
 EXPOSE 8081
 
 WORKDIR /app
