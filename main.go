@@ -11,13 +11,19 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/r3labs/sse/v2"
 )
 
 var (
 	topic *pubsub.Topic
+	server *sse.Server
 )
 
 func main() {
+
+	// setup sse
+	server = sse.New()
+	server.CreateStream("messages")
 
 	setupLogging()
 
@@ -44,6 +50,22 @@ func main() {
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal(err)
 	}
+
+	server.Publish("messages", &sse.Event{
+		Data: []byte("hello-app started"),
+	})
+}
+
+func sseHandler(w http.ResponseWriter, r *http.Request) {
+
+	go func() {
+		// browser disconnect
+		<-r.Context().Done()
+		println("The client is disconnected here")
+		return
+	}()
+
+	server.ServeHTTP(w, r)
 }
 
 func setupLogging() {
@@ -56,6 +78,7 @@ func setupRest() {
 	http.HandleFunc("/", hello)
 	http.HandleFunc("/publish", publishHandler)
 	http.HandleFunc("/push", pushHandler)
+	http.HandleFunc("/events", sseHandler)
 	http.HandleFunc("/request", getPubsubMessage)
 	http.HandleFunc("/concurrency1", concurrency1)
 	http.HandleFunc("/concurrency2", concurrency2)
