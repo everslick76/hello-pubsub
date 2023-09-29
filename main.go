@@ -128,7 +128,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 
 		message := "Message published: " + string(msg.Data)
 		server.Publish("messages", &sse.Event{
-			Data: []byte("message"),
+			Data: []byte(message),
 		})
 	
 		log.Printf(message)
