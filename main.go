@@ -50,10 +50,6 @@ func main() {
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal(err)
 	}
-
-	server.Publish("messages", &sse.Event{
-		Data: []byte("hello-app started"),
-	})
 }
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,8 +125,13 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Could not publish message: %v", err), http.StatusBadRequest)
 			return
 		}
+
+		message := "Message published: " + string(msg.Data)
+		server.Publish("messages", &sse.Event{
+			Data: []byte("message"),
+		})
 	
-		log.Printf("Message published: " + string(msg.Data))
+		log.Printf(message)
 	}
 
 	fmt.Fprint(w, "Message(s) published: " + requests)
