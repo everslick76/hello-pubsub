@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"slices"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/r3labs/sse/v2"
@@ -54,7 +55,11 @@ func main() {
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
 
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	origin := r.Header.Get("Origin");
+	allowed := []string{"http://localhost:3000", "https://storage.googleapis.com"}
+	if (slices.Contains(allowed, origin)) {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+	}
 
 	go func() {
 		// browser disconnect

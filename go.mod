@@ -1,6 +1,6 @@
 module hello-pubsub
 
-go 1.20
+go 1.21
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
