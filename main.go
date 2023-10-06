@@ -100,13 +100,20 @@ type jsonResult struct {
 
 func pushHandler(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+
 	msg := &pushRequest{}
 	if err := json.NewDecoder(r.Body).Decode(msg); err != nil {
 		http.Error(w, fmt.Sprintf("Could not decode body: %v", err), http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Message received: %s", string(msg.Message.Data))
+	message := fmt.Sprintf("Message received: %s", string(msg.Message.Data));
+	server.Publish("messages", &sse.Event{
+		Data: []byte(message),
+	})
+
+	log.Printf(message);
 }
 
 func publishHandler(w http.ResponseWriter, r *http.Request) {
