@@ -54,6 +54,8 @@ func main() {
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+
 	go func() {
 		// browser disconnect
 		<-r.Context().Done()
@@ -101,8 +103,6 @@ type jsonResult struct {
 func pushHandler(w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(randomDuration(2, 5))
-
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 
 	msg := &pushRequest{}
 	if err := json.NewDecoder(r.Body).Decode(msg); err != nil {
