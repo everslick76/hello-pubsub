@@ -94,6 +94,10 @@ type pushRequest struct {
 	Subscription string
 }
 
+type jsonResult struct {
+	Message string `json:"message"`
+}
+
 func pushHandler(w http.ResponseWriter, r *http.Request) {
 
 	msg := &pushRequest{}
@@ -134,7 +138,12 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf(message)
 	}
 
-	fmt.Fprintln(w, "Message(s) published: ", n)
+	msg := &jsonResult{
+		Message: fmt.Sprintf("Message(s) published: %v", n),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(msg)
 }
 
 
