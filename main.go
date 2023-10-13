@@ -7,9 +7,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"slices"
 	"sync"
 	"time"
-	"slices"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/r3labs/sse/v2"
@@ -115,9 +115,10 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := fmt.Sprintf("Message received: %s", string(msg.Message.Data));
+	name := string(msg.Message.Data);
+	message := fmt.Sprintf("Message received: %s", name);
 	server.Publish("messages", &sse.Event{
-		Data: []byte(message),
+		Data: []byte(name),
 	})
 
 	log.Printf(message);
