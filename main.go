@@ -24,6 +24,7 @@ func main() {
 
 	// setup sse
 	server = sse.New()
+	server.AutoReplay = false
 	server.CreateStream("messages")
 
 	setupLogging()
@@ -69,8 +70,6 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	server.ServeHTTP(w, r)
-
-	w.(http.Flusher).Flush()
 }
 
 func setupLogging() {
