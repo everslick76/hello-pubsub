@@ -69,6 +69,8 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	server.ServeHTTP(w, r)
+
+	w.(http.Flusher).Flush()
 }
 
 func setupLogging() {
