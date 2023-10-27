@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net/http"
 	"slices"
-	"sync"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -16,9 +15,14 @@ import (
 )
 
 var (
-	topic *pubsub.Topic
+	topic  *pubsub.Topic
 	server *sse.Server
 )
+
+func init() {
+
+	setupLogging()
+}
 
 func main() {
 
@@ -27,9 +31,10 @@ func main() {
 	server.AutoReplay = false
 	server.CreateStream("messages")
 
-	setupLogging()
-
-	setupRest()
+	http.HandleFunc("/", hello)
+	http.HandleFunc("/publish", publishHandler)
+	http.HandleFunc("/push", pushHandler)
+	http.HandleFunc("/events", sseHandler)
 
 	// setup pubsub
 	ctx := context.Background()
@@ -56,9 +61,9 @@ func main() {
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
 
-	origin := r.Header.Get("Origin");
+	origin := r.Header.Get("Origin")
 	allowed := []string{"http://localhost:3000", "https://storage.googleapis.com"}
-	if (slices.Contains(allowed, origin)) {
+	if slices.Contains(allowed, origin) {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 	}
 
@@ -75,17 +80,6 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 func setupLogging() {
 
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-}
-
-func setupRest() {
-
-	http.HandleFunc("/", hello)
-	http.HandleFunc("/publish", publishHandler)
-	http.HandleFunc("/push", pushHandler)
-	http.HandleFunc("/events", sseHandler)
-	http.HandleFunc("/request", getPubsubMessage)
-	http.HandleFunc("/concurrency1", concurrency1)
-	http.HandleFunc("/concurrency2", concurrency2)
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
@@ -116,13 +110,13 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := string(msg.Message.Data);
-	message := fmt.Sprintf("Message received: %s", name);
+	name := string(msg.Message.Data)
+	message := fmt.Sprintf("Message received: %s", name)
 	server.Publish("messages", &sse.Event{
 		Data: []byte(name),
 	})
 
-	log.Printf(message);
+	log.Printf(message)
 }
 
 func publishHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +134,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		msg := &pubsub.Message{
 			Data: []byte(currentTime),
 		}
-	
+
 		if _, err := topic.Publish(ctx, msg).Get(ctx); err != nil {
 			http.Error(w, fmt.Sprintf("Could not publish message: %v", err), http.StatusBadRequest)
 			return
@@ -150,7 +144,7 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 		server.Publish("messages", &sse.Event{
 			Data: []byte(message),
 		})
-	
+
 		log.Printf(message)
 	}
 
@@ -162,106 +156,6 @@ func publishHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(msg)
 }
 
-
-func getPubsubMessage(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
-
-	msg := &pubsub.Message{
-		Data: []byte(time.Now().String()),
-	}
-
-	json.NewEncoder(w).Encode(msg)
-}
-
- // testing goroutines, channels and wait groups options
-
-func concurrency1(w http.ResponseWriter, r *http.Request) {
-
-	// one goroutine per request
-
-	n := 1
-	requests := r.URL.Query().Get("requests")
-	fmt.Sscan(requests, &n)
-
-	ch := make(chan string)
-
-	var wg sync.WaitGroup
-	wg.Add(n)
-
-	go print(ch, &wg)
-
-	for i := 1; i <= n; i++ {
-		go routine1(i, ch, &wg)
-	}
-
-	wg.Wait()
-
-	log.Printf("%s Message(s) published", requests)
-}
-
-func routine1(i int, ch chan<- string, wg *sync.WaitGroup) {
-
-	start := time.Now()
-	ch <- fmt.Sprintf("Processing message number %d", i)
-	time.Sleep(randomDuration(2, 10))
-	ch <- fmt.Sprintf("Published message number %d after %s", i, time.Since(start))
-
-	defer wg.Done()
-}
-
-func concurrency2(w http.ResponseWriter, r *http.Request) {
-
-	// one goroutine per function
-
-	var n int
-
-	requests := r.URL.Query().Get("requests")
-	if _, err := fmt.Sscan(requests, &n); err != nil {
-		http.Error(w, fmt.Sprintf("Could not extract number of requests: %v", err), 500)
-		return
-	}
-
-	ch := make(chan string)
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go print(ch, &wg)
-
-	go routine2(n, ch, &wg)
-
-	wg.Wait()
-
-	log.Printf("%s Message(s) published", requests)
-}
-
-func routine2(n int, ch chan<- string, wg *sync.WaitGroup) {
-
-	for i := 1; i <= n; i++ {
-		start := time.Now()
-		ch <- fmt.Sprintf("Processing message number %d", i)
-		time.Sleep(randomDuration(2, 10))
-		ch <- fmt.Sprintf("Published message number %d after %s", i, time.Since(start))
-	}
-
-	close(ch)
-	defer wg.Done()
-}
-
 func randomDuration(min int, max int) time.Duration {
-	return time.Duration(rand.Intn(max - min) + min) * time.Second
-}
-
-func print(ch <-chan string, wg *sync.WaitGroup) {
-
-	for {
-		n, open := <-ch
-		if !open {
-			break
-		}
-		log.Printf(n)
-	}
-
-    defer wg.Done()
+	return time.Duration(rand.Intn(max-min)+min) * time.Second
 }
